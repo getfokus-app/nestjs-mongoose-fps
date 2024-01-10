@@ -46,6 +46,8 @@ export class FilterParser {
           this.validateAllowedKey(key, v[key]);
         } else {
           const prop = this.validateProperty(key, v[key]);
+          // If the property name is different from the key, we need to
+          // transform the key to the property name.
           if (prop !== key) {
             v[prop] = v[key];
             delete v[key];
@@ -55,14 +57,25 @@ export class FilterParser {
       return v;
     }
   }
-
   private validateProperty(prop: string, value: any) {
     if (
       !Object.keys(this.collectionPropsClass.prototype.__props).includes(prop)
-    )
+    ) {
       throw new FilterValidationError(
         `Property '${prop}' is not exposed for filtering.`,
       );
+    }
+
+    const propType = this.collectionPropsClass.prototype.__props[prop]?.type;
+    if (propType === 'date') {
+      if (value instanceof Object) {
+        for (const key in value) {
+          value[key] = new Date(value[key]);
+        }
+      } else {
+        value = new Date(value);
+      }
+    }
 
     this.transform(value);
 
