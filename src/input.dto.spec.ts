@@ -42,16 +42,7 @@ describe('CollectionDto', () => {
       expect(errors.length).toBe(0);
     });
 
-    it('should allow number equal then zero', async () => {
-      const payload = {
-        page: 0,
-      };
-      const collectionDto = plainToClass(CollectionDto, payload);
-      const errors = await validate(collectionDto);
-      expect(errors.length).toBe(0);
-    });
-
-    it('should not allow number less then zero', async () => {
+    it('should not allow number less than zero', async () => {
       const payload = {
         page: -1,
       };
@@ -60,12 +51,21 @@ describe('CollectionDto', () => {
       expect(errors.length).not.toBe(0);
     });
 
-    it('should default to 0 if not given', async () => {
+    it('should not allow number equal to zero', async () => {
+      const payload = {
+        page: 0,
+      };
+      const collectionDto = plainToClass(CollectionDto, payload);
+      const errors = await validate(collectionDto);
+      expect(errors.length).not.toBe(0);
+    });
+
+    it('should default to 1 if not given', async () => {
       const payload = {};
       const collectionDto = plainToClass(CollectionDto, payload);
       const errors = await validate(collectionDto);
       expect(errors.length).toBe(0);
-      expect(collectionDto.page).toBe(0);
+      expect(collectionDto.page).toBe(1);
     });
   });
 
@@ -79,13 +79,13 @@ describe('CollectionDto', () => {
       expect(errors.length).toBe(0);
     });
 
-    it('should allow number equal zero', async () => {
+    it('should not allow number equal zero', async () => {
       const payload = {
         limit: 0,
       };
       const collectionDto = plainToClass(CollectionDto, payload);
       const errors = await validate(collectionDto);
-      expect(errors.length).toBe(0);
+      expect(errors.length).not.toBe(0);
     });
 
     it('should not allow number less then zero', async () => {
