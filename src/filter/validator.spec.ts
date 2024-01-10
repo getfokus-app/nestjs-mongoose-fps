@@ -11,6 +11,7 @@ describe('Validator', () => {
         { mimetype: 'audio' },
         { mimetype: ['audio', 'video', true] },
         { mimetype: true },
+        { created_at: { $gt: '2023-12-31' } },
         { mimetype: { $eq: true } },
         { mimetype: { $eq: 'audio' } },
         { mimetype: { $regex: '^audio/' } },
