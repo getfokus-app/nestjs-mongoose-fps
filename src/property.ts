@@ -6,5 +6,6 @@ export interface CollectionPropertyOptions {
   readonly name?: string;
   readonly sortable?: boolean;
   readonly filterable?: boolean;
+  readonly type?: string;
   readonly default?: boolean;
 }
