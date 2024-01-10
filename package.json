@@ -1,6 +1,6 @@
 {
-  "name": "@forlagshuset/nestjs-mongoose-paginate",
-  "version": "1.2.9",
+  "name": "@fokus-app/nestjs-mongoose-fps",
+  "version": "2.0.0",
   "description": "A pagination, filtering and sorting lib for nestjs using mongoose orm",
   "main": "dist/index.js",
   "scripts": {
@@ -14,14 +14,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/fagbokforlaget/nestjs-mongoose-paginate.git"
+    "url": "git+https://github.com/getfokus-app/nestjs-mongoose-fps.git"
   },
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/fagbokforlaget/nestjs-mongoose-paginate/issues"
+    "url": "https://github.com/getfokus-app/nestjs-mongoose-fps/issues"
   },
-  "homepage": "https://github.com/fagbokforlaget/nestjs-mongoose-paginate#readme",
+  "homepage": "https://github.com/getfokus-app/nestjs-mongoose-fps#readme",
   "devDependencies": {
     "@nestjs/testing": "^10.2.6",
     "@types/jest": "^29.5.5",
