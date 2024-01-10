@@ -38,12 +38,12 @@ export class CollectionDto {
   readonly sorter?: SortableParameters;
 
   @Type(() => Number)
-  @Min(0)
-  @ApiPropertyOptional({ example: 0, description: '' })
-  readonly page?: number = 0;
+  @Min(1)
+  @ApiPropertyOptional({ example: 1, description: '' })
+  readonly page?: number = 1;
 
   @Type(() => Number)
-  @Min(0)
+  @Min(1)
   @ApiPropertyOptional({ example: 10, description: '' })
   readonly limit?: number = 10;
 }
