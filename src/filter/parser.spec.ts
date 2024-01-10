@@ -11,6 +11,9 @@ class User extends CollectionProperties {
   @Expose({ filterable: true })
   id?: number;
 
+  @Expose({ filterable: true, type: 'date' })
+  created_at?: string;
+
   @Expose({ name: 'typeName', filterable: true })
   type_name: string;
 
@@ -55,6 +58,17 @@ describe('Filter', () => {
 
         expect(filterParams).toHaveProperty('name');
         expect(filterParams.name).toEqual({ $regex: '^image/' });
+      });
+
+      it('should allow parsing the date field with key $gte', async () => {
+        const filterParams = new FilterParser(User).parse({
+          filter: { created_at: { $gte: '2019-01-01' } },
+        });
+
+        expect(filterParams).toHaveProperty('created_at');
+        expect(filterParams.created_at).toEqual({
+          $gte: new Date('2019-01-01'),
+        });
       });
 
       it('should process known property inside allowed key', async () => {
