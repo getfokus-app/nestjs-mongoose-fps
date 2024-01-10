@@ -1,6 +1,16 @@
-# nestjs-mongoose-paginate
+# nestjs-mongoose-fps
 
-A pagination, filtering and sorting lib for nestjs v8(for v7 please use < v1.1) using mongoose orm
+A filtration, pagination and sorting lib for NestJS v8 using mongoose ORM
+
+This library is fork from [nestjs-mongoose-paginate](https://github.com/fagbokforlaget/nestjs-mongoose-paginate)
+
+# Changes to the original library
+
+- Start page counting from 1 instead of 0.
+- Return lean documents instead of Mongoose Documents to be easier for serialization.
+- Allow sending extra filters to work with the filter added by the user.
+- Allow setting some fields to be populated.
+- Allow (`lt`, `lte`, `gt`, `gte`) to work with dates.
 
 # Usage
 
@@ -12,13 +22,10 @@ You should set this parameters explicitly.
 In case you want to expose some of the properties with a different name, you need to specify a `name` option in this decorator.
 
 ```typescript
-import {
-  CollectionProperties,
-  Expose
-} from '@forlagshuset/nestjs-mongoose-paginate';
+import { CollectionProperties, Expose } from '@fokus-app/nestjs-mongoose-fps';
 
 export class MyCollectionProperties extends CollectionProperties {
-  @Expose({ name: 'createdAt', sortable: true })
+  @Expose({ name: 'createdAt', sortable: true, filterable: true, type: 'date' })
   readonly created_at: 'desc' | 'asc';
 
   @Expose({ sortable: true, default: true, filterable: true })
@@ -34,8 +41,8 @@ export class MyCollectionProperties extends CollectionProperties {
 import {
   CollectionDto,
   ValidationPipe,
-  CollectionResponse
-} from '@forlagshuset/nestjs-mongoose-paginate';
+  CollectionResponse,
+} from '@fokus-app/nestjs-mongoose-fps';
 
 @Controller()
 export class AppController {
@@ -58,7 +65,8 @@ import {
   CollectionDto,
   DocumentCollector,
   CollectionResponse
-} from '@forlagshuset/nestjs-mongoose-paginate';
+} from '@fokus-app/nestjs-mongoose-fps';
+import { ObjectId } from 'mongodb';
 
 @Injectable()
 export class AppService {
@@ -70,7 +78,8 @@ export class AppService {
       collectionDto: CollectionDto,
   ): Promise<CollectionResponse<MyDocument>> {
     const collector = new DocumentCollector<MyDocument>(this.model);
-    return collector.find(collectionDto);
+    const extraFilter = { user: new ObjectId('64c65c8d88c7ccb23521dd39') }
+    return collector.find(collectionDto, extraFilter);
   }
 }
 ```
@@ -80,7 +89,7 @@ export class AppService {
 You may now send a request, like in example below:
 
 ```
-http://localhost:3000/list?filter={"userName": {"$regex": "^test"}}&sort=-createdAt&page=0&limit=100
+http://localhost:3000/list?filter={"userName": {"$regex": "^test"}}&sort=-createdAt&page=1&limit=100
 ```
 
 You need to run the parameters through `urlencode` to be able to parse the query correctly. So the filter part looks more like
