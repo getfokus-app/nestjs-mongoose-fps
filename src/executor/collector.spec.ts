@@ -23,6 +23,12 @@ class MyQueryExecutor implements QueryExecutor<any> {
   sort(): MyQueryExecutor {
     return this;
   }
+  lean(): MyQueryExecutor {
+    return this;
+  }
+  populate(): MyQueryExecutor {
+    return this;
+  }
 }
 
 class MyModel implements Model {
