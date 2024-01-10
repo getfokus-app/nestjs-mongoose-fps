@@ -6,12 +6,14 @@ export const Expose = (options?: CollectionPropertyOptions) => {
     const propName = options?.name ?? propertyName;
     const sortable = options?.sortable ?? false;
     const filterable = options?.filterable ?? false;
+    const type = options?.type ?? 'string';
     const def = options?.default ?? false;
 
     target.__props[propName] = {
       name: propertyName,
       sortable,
       filterable,
+      type,
       default: def,
     };
   };
