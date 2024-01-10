@@ -2,7 +2,7 @@ import { CollectionProperties } from './property';
 import { Expose } from './property.decorator';
 
 class User extends CollectionProperties {
-  @Expose({ sortable: true, filterable: true })
+  @Expose({ sortable: true, filterable: true, type: 'string' })
   name: string;
 
   @Expose({ filterable: true })
@@ -50,6 +50,8 @@ describe('Properties', () => {
           expect(User.prototype['__props'].name.filterable).toBe(true);
           expect(User.prototype['__props'].name).toHaveProperty('sortable');
           expect(User.prototype['__props'].name.sortable).toBe(true);
+          expect(User.prototype['__props'].name).toHaveProperty('type');
+          expect(User.prototype['__props'].name.type).toBe('string');
         });
 
         it('should have defined options', async () => {
