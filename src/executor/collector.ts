@@ -27,7 +27,11 @@ export class DocumentCollector<T> {
     userFilter: FilterableParameters,
     scope: FilterableParameters,
   ): FilterableParameters {
-    if (scope && Object.keys(scope).length === 0) {
+    if (
+      !scope ||
+      typeof scope !== 'object' ||
+      Object.keys(scope).length === 0
+    ) {
       return userFilter;
     }
 
