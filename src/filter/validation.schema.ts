@@ -58,7 +58,7 @@ export const schema = {
       ],
     },
     logical: {
-      type: 'object
+      type: 'object',
       properties: {
         $not: {
           $ref: '#/definitions/comparison',
