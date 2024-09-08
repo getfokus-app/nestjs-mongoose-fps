@@ -36,6 +36,39 @@ describe('Validator', () => {
       });
     });
 
+    it('should allow date queries', async () => {
+      const queries = [
+        { created_at: { $gt: '2023-12-31' } },
+        { created_at: { $gte: '2023-12-31' } },
+        { created_at: { $lt: '2023-12-31' } },
+        { created_at: { $lte: '2023-12-31' } },
+      ];
+
+      queries.forEach((query) => {
+        expect(validator.validate(query)).toBe(true);
+      });
+    });
+
+    it('should allow nested queries', async () => {
+      const queries = [
+        {
+          $and: [
+            { created_at: { $gt: '2023-12-31' } },
+            {
+              $or: [
+                { created_at: { $lt: '2023-12-31' } },
+                { created_at: { $eq: 'null' } },
+              ],
+            },
+          ],
+        },
+      ];
+
+      queries.forEach((query) => {
+        expect(validator.validate(query)).toBe(true);
+      });
+    });
+
     it('should not be valid', async () => {
       const queries = [
         { $unknown: 'audio' },
