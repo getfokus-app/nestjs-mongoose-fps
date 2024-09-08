@@ -11,7 +11,6 @@ export const schema = {
       anyOf: [
         {
           type: 'object',
-          additionalProperties: false,
           patternProperties: {
             '^[a-zA-Z].*$': {
               type: ['string', 'number', 'boolean', 'null'],
@@ -20,7 +19,6 @@ export const schema = {
         },
         {
           type: 'object',
-          additionalProperties: false,
           patternProperties: {
             '^[a-zA-Z].*$': {
               $ref: '#/definitions/comparison',
@@ -29,7 +27,6 @@ export const schema = {
         },
         {
           type: 'object',
-          additionalProperties: false,
           patternProperties: {
             '^[a-zA-Z].*$': {
               type: 'array',
@@ -41,7 +38,6 @@ export const schema = {
         },
         {
           type: 'object',
-          additionalProperties: false,
           patternProperties: {
             '^[a-zA-Z].*$': {
               $ref: '#/definitions/logical',
@@ -50,7 +46,6 @@ export const schema = {
         },
         {
           type: 'object',
-          additionalProperties: false,
           patternProperties: {
             '[$](and|or|nor)$': {
               type: 'array',
@@ -63,8 +58,7 @@ export const schema = {
       ],
     },
     logical: {
-      type: 'object',
-      additionalProperties: false,
+      type: 'object
       properties: {
         $not: {
           $ref: '#/definitions/comparison',
@@ -75,7 +69,6 @@ export const schema = {
       anyOf: [
         {
           type: 'object',
-          additionalProperties: false,
           properties: {
             $regex: {
               type: 'string',
@@ -87,7 +80,6 @@ export const schema = {
         },
         {
           type: 'object',
-          additionalProperties: false,
           patternProperties: {
             '^[$](eq|neq)$': {
               type: ['string', 'number', 'boolean', 'null'],
@@ -96,7 +88,6 @@ export const schema = {
         },
         {
           type: 'object',
-          additionalProperties: false,
           patternProperties: {
             '^[$](gt|gte|lt|lte)$': {
               type: ['string', 'number', 'object'],
@@ -105,7 +96,6 @@ export const schema = {
         },
         {
           type: 'object',
-          additionalProperties: false,
           patternProperties: {
             '^[$](in|nin)$': {
               type: 'array',
