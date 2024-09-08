@@ -40,7 +40,7 @@ export class FilterParser {
       for (const k of v) {
         this.transform(k);
       }
-    } else if (v instanceof Object) {
+    } else if (v instanceof Object && !(v instanceof Date)) {
       for (const key in v) {
         if (/^\$/.test(key)) {
           this.validateAllowedKey(key, v[key]);
@@ -70,8 +70,18 @@ export class FilterParser {
     if (propType === 'date') {
       if (value instanceof Object) {
         for (const key in value) {
-          value[key] = new Date(value[key]);
+          if (
+            value[key] == null ||
+            value[key] === 'null' ||
+            value[key] === ''
+          ) {
+            value[key] = null;
+          } else {
+            value[key] = new Date(value[key]);
+          }
         }
+      } else if (value == null || value === 'null' || value === '') {
+        value = null;
       } else {
         value = new Date(value);
       }
