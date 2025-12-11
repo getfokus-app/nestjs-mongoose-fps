@@ -1,6 +1,6 @@
 {
   "name": "@fokus-app/nestjs-mongoose-fps",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "A filtration, pagination and sorting lib for NestJS using mongoose ORM",
   "main": "dist/index.js",
   "scripts": {
