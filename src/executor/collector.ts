@@ -13,7 +13,7 @@ export type QueryExecutor<T> = {
   lean(): any;
   populate(relation: string[] | PopulateOptions[]);
   sort(data: SortableParameters): QueryExecutor<T>;
-  select(fields: string | string[] | Record<string, number>): QueryExecutor<T>;
+  select?(fields: string | string[] | Record<string, number>): QueryExecutor<T>;
 };
 
 export type PopulateOptions = {
@@ -137,7 +137,7 @@ export class DocumentCollector<T> {
       q.populate(options.populate);
     }
 
-    if (options.select) {
+    if (options.select && q.select) {
       q.select(options.select);
     }
 
