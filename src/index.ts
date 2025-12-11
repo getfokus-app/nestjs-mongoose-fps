@@ -1,4 +1,8 @@
-export { CollectionDto, FilterableParameters, SortableParameters } from './input.dto';
+export {
+  CollectionDto,
+  FilterableParameters,
+  SortableParameters,
+} from './input.dto';
 export { CollectionResponse, Pagination } from './output.dto';
 export { CollectionProperties, CollectionPropertyOptions } from './property';
 export { FilterValidationError } from './filter/validation.error';

@@ -115,10 +115,7 @@ describe('Validator', () => {
 
     describe('$size operator', () => {
       it('should allow $size for array length', () => {
-        const queries = [
-          { tags: { $size: 0 } },
-          { items: { $size: 5 } },
-        ];
+        const queries = [{ tags: { $size: 0 } }, { items: { $size: 5 } }];
 
         queries.forEach((query) => {
           expect(validator.validate(query)).toBe(true);
@@ -183,9 +180,7 @@ describe('Validator', () => {
       });
 
       it('should allow $exists with $not', () => {
-        const queries = [
-          { items: { $exists: true, $not: { $size: 0 } } },
-        ];
+        const queries = [{ items: { $exists: true, $not: { $size: 0 } } }];
 
         queries.forEach((query) => {
           expect(validator.validate(query)).toBe(true);

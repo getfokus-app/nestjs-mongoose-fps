@@ -1,4 +1,10 @@
-import { DocumentCollector, QueryExecutor, Model, FindOptions, PopulateOptions } from './collector';
+import {
+  DocumentCollector,
+  QueryExecutor,
+  Model,
+  FindOptions,
+  PopulateOptions,
+} from './collector';
 
 const data = [
   { id: 1, name: 'one' },
@@ -78,12 +84,17 @@ class MyModel implements Model {
   find(): MyQueryExecutor {
     return new MyQueryExecutor(data);
   }
-  aggregate<T>(pipeline: Record<string, unknown>[]): { exec: () => Promise<T[]> } {
+  aggregate<T>(_pipeline: Record<string, unknown>[]): {
+    exec: () => Promise<T[]>;
+  } {
     return {
       exec: async () => [{ count: 6, avgId: 3.5 }] as T[],
     };
   }
-  distinct(field: string, filter?: Record<string, unknown>): Promise<unknown[]> {
+  distinct(
+    _field: string,
+    _filter?: Record<string, unknown>,
+  ): Promise<unknown[]> {
     return Promise.resolve(['one', 'two', 'three', 'four', 'five', 'six']);
   }
 }
@@ -146,7 +157,11 @@ describe('Executor', () => {
 
         await collector.findAll({}, undefined, { limit: 3 });
 
-        expect(queryExecutor.calls.some((c) => c.method === 'limit' && c.args[0] === 3)).toBe(true);
+        expect(
+          queryExecutor.calls.some(
+            (c) => c.method === 'limit' && c.args[0] === 3,
+          ),
+        ).toBe(true);
       });
 
       it('should apply skip option', async () => {
@@ -159,7 +174,11 @@ describe('Executor', () => {
 
         await collector.findAll({}, undefined, { skip: 2 });
 
-        expect(queryExecutor.calls.some((c) => c.method === 'skip' && c.args[0] === 2)).toBe(true);
+        expect(
+          queryExecutor.calls.some(
+            (c) => c.method === 'skip' && c.args[0] === 2,
+          ),
+        ).toBe(true);
       });
 
       it('should apply sort option', async () => {
@@ -185,9 +204,13 @@ describe('Executor', () => {
         };
         const collector = new DocumentCollector(model);
 
-        await collector.findAll({}, undefined, { populate: ['relation1', 'relation2'] });
+        await collector.findAll({}, undefined, {
+          populate: ['relation1', 'relation2'],
+        });
 
-        const populateCall = queryExecutor.calls.find((c) => c.method === 'populate');
+        const populateCall = queryExecutor.calls.find(
+          (c) => c.method === 'populate',
+        );
         expect(populateCall).toBeDefined();
         expect(populateCall.args[0]).toEqual(['relation1', 'relation2']);
       });
@@ -205,7 +228,9 @@ describe('Executor', () => {
         ];
         await collector.findAll({}, undefined, { populate: populateOptions });
 
-        const populateCall = queryExecutor.calls.find((c) => c.method === 'populate');
+        const populateCall = queryExecutor.calls.find(
+          (c) => c.method === 'populate',
+        );
         expect(populateCall).toBeDefined();
         expect(populateCall.args[0]).toEqual(populateOptions);
       });
@@ -220,7 +245,9 @@ describe('Executor', () => {
 
         await collector.findAll({}, undefined, { select: ['id', 'name'] });
 
-        const selectCall = queryExecutor.calls.find((c) => c.method === 'select');
+        const selectCall = queryExecutor.calls.find(
+          (c) => c.method === 'select',
+        );
         expect(selectCall).toBeDefined();
         expect(selectCall.args[0]).toEqual(['id', 'name']);
       });
@@ -242,11 +269,17 @@ describe('Executor', () => {
         };
         await collector.findAll({}, undefined, options);
 
-        expect(queryExecutor.calls.some((c) => c.method === 'limit')).toBe(true);
+        expect(queryExecutor.calls.some((c) => c.method === 'limit')).toBe(
+          true,
+        );
         expect(queryExecutor.calls.some((c) => c.method === 'skip')).toBe(true);
         expect(queryExecutor.calls.some((c) => c.method === 'sort')).toBe(true);
-        expect(queryExecutor.calls.some((c) => c.method === 'populate')).toBe(true);
-        expect(queryExecutor.calls.some((c) => c.method === 'select')).toBe(true);
+        expect(queryExecutor.calls.some((c) => c.method === 'populate')).toBe(
+          true,
+        );
+        expect(queryExecutor.calls.some((c) => c.method === 'select')).toBe(
+          true,
+        );
       });
 
       it('should apply scope filter with $and', async () => {
@@ -288,8 +321,12 @@ describe('Executor', () => {
 
         await collector.findWithLimit({}, 5, undefined, ['relation']);
 
-        expect(queryExecutor.calls.some((c) => c.method === 'populate')).toBe(true);
-        expect(queryExecutor.calls.some((c) => c.method === 'limit')).toBe(true);
+        expect(queryExecutor.calls.some((c) => c.method === 'populate')).toBe(
+          true,
+        );
+        expect(queryExecutor.calls.some((c) => c.method === 'limit')).toBe(
+          true,
+        );
       });
     });
 
@@ -375,7 +412,11 @@ describe('Executor', () => {
         };
         const collector = new DocumentCollector(model);
 
-        await collector.distinct('category', { status: 'active' }, { workspace: 'ws-123' });
+        await collector.distinct(
+          'category',
+          { status: 'active' },
+          { workspace: 'ws-123' },
+        );
 
         expect(capturedField).toBe('category');
         expect(capturedFilter).toHaveProperty('$and');
@@ -447,9 +488,13 @@ describe('Executor', () => {
         };
         const collector = new DocumentCollector(model);
 
-        await collector.findOne({ id: 1 }, undefined, { populate: ['relation'] });
+        await collector.findOne({ id: 1 }, undefined, {
+          populate: ['relation'],
+        });
 
-        expect(queryExecutor.calls.some((c) => c.method === 'populate')).toBe(true);
+        expect(queryExecutor.calls.some((c) => c.method === 'populate')).toBe(
+          true,
+        );
       });
 
       it('should apply select option', async () => {
@@ -462,7 +507,9 @@ describe('Executor', () => {
 
         await collector.findOne({ id: 1 }, undefined, { select: ['id'] });
 
-        expect(queryExecutor.calls.some((c) => c.method === 'select')).toBe(true);
+        expect(queryExecutor.calls.some((c) => c.method === 'select')).toBe(
+          true,
+        );
       });
 
       it('should limit to 1 document', async () => {
@@ -501,7 +548,10 @@ describe('Executor', () => {
         };
         const collector = new DocumentCollector(model);
 
-        await collector.count({ filter: { status: 'active' } }, { workspace: 'ws-123' });
+        await collector.count(
+          { filter: { status: 'active' } },
+          { workspace: 'ws-123' },
+        );
 
         expect(capturedFilter).toHaveProperty('$and');
       });
@@ -528,7 +578,10 @@ describe('Executor', () => {
         const model = new MyModel();
         const collector = new DocumentCollector(model);
 
-        const result = collector.scopedFilter({ id: 1 }, { workspace: 'ws-123' });
+        const result = collector.scopedFilter(
+          { id: 1 },
+          { workspace: 'ws-123' },
+        );
         expect(result).toHaveProperty('$and');
         expect(result.$and).toContainEqual({ id: 1 });
         expect(result.$and).toContainEqual({ workspace: 'ws-123' });
