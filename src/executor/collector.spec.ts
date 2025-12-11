@@ -1,7 +1,6 @@
 import {
   DocumentCollector,
   QueryExecutor,
-  Model,
   FindOptions,
   PopulateOptions,
 } from './collector';
@@ -77,13 +76,16 @@ class MyQueryExecutor implements QueryExecutor<any> {
   }
 }
 
-class MyModel implements Model {
+// Mock model that simulates Mongoose model behavior
+// Has additional methods like aggregate and distinct that real Mongoose models have
+class MyModel {
   countDocuments(): QueryExecutor<number> {
     return new MyQueryExecutor(100);
   }
   find(): MyQueryExecutor {
     return new MyQueryExecutor(data);
   }
+  // Additional methods available at runtime
   aggregate<T>(_pipeline: Record<string, unknown>[]): {
     exec: () => Promise<T[]>;
   } {
@@ -149,7 +151,7 @@ describe('Executor', () => {
 
       it('should apply limit option', async () => {
         const queryExecutor = new TrackingQueryExecutor(data.slice(0, 3));
-        const model: Model = {
+        const model = {
           countDocuments: () => new MyQueryExecutor(100),
           find: () => queryExecutor,
         };
@@ -166,7 +168,7 @@ describe('Executor', () => {
 
       it('should apply skip option', async () => {
         const queryExecutor = new TrackingQueryExecutor(data.slice(2));
-        const model: Model = {
+        const model = {
           countDocuments: () => new MyQueryExecutor(100),
           find: () => queryExecutor,
         };
@@ -183,7 +185,7 @@ describe('Executor', () => {
 
       it('should apply sort option', async () => {
         const queryExecutor = new TrackingQueryExecutor(data);
-        const model: Model = {
+        const model = {
           countDocuments: () => new MyQueryExecutor(100),
           find: () => queryExecutor,
         };
@@ -198,7 +200,7 @@ describe('Executor', () => {
 
       it('should apply populate option with string array', async () => {
         const queryExecutor = new TrackingQueryExecutor(data);
-        const model: Model = {
+        const model = {
           countDocuments: () => new MyQueryExecutor(100),
           find: () => queryExecutor,
         };
@@ -217,7 +219,7 @@ describe('Executor', () => {
 
       it('should apply populate option with PopulateOptions', async () => {
         const queryExecutor = new TrackingQueryExecutor(data);
-        const model: Model = {
+        const model = {
           countDocuments: () => new MyQueryExecutor(100),
           find: () => queryExecutor,
         };
@@ -237,7 +239,7 @@ describe('Executor', () => {
 
       it('should apply select option', async () => {
         const queryExecutor = new TrackingQueryExecutor(data);
-        const model: Model = {
+        const model = {
           countDocuments: () => new MyQueryExecutor(100),
           find: () => queryExecutor,
         };
@@ -254,7 +256,7 @@ describe('Executor', () => {
 
       it('should apply all options together', async () => {
         const queryExecutor = new TrackingQueryExecutor(data);
-        const model: Model = {
+        const model = {
           countDocuments: () => new MyQueryExecutor(100),
           find: () => queryExecutor,
         };
@@ -284,7 +286,7 @@ describe('Executor', () => {
 
       it('should apply scope filter with $and', async () => {
         let capturedFilter: any;
-        const model: Model = {
+        const model = {
           countDocuments: () => new MyQueryExecutor(100),
           find: (filter) => {
             capturedFilter = filter;
@@ -313,7 +315,7 @@ describe('Executor', () => {
 
       it('should pass populate option to findAll', async () => {
         const queryExecutor = new TrackingQueryExecutor(data);
-        const model: Model = {
+        const model = {
           countDocuments: () => new MyQueryExecutor(100),
           find: () => queryExecutor,
         };
@@ -342,7 +344,7 @@ describe('Executor', () => {
       });
 
       it('should throw error if aggregate not supported', async () => {
-        const model: Model = {
+        const model = {
           countDocuments: () => new MyQueryExecutor(100),
           find: () => new MyQueryExecutor(data),
           // No aggregate method
@@ -356,7 +358,7 @@ describe('Executor', () => {
 
       it('should pass pipeline to model aggregate', async () => {
         let capturedPipeline: any;
-        const model: Model = {
+        const model = {
           countDocuments: () => new MyQueryExecutor(100),
           find: () => new MyQueryExecutor(data),
           aggregate: (pipeline) => {
@@ -386,7 +388,7 @@ describe('Executor', () => {
       });
 
       it('should throw error if distinct not supported', async () => {
-        const model: Model = {
+        const model = {
           countDocuments: () => new MyQueryExecutor(100),
           find: () => new MyQueryExecutor(data),
           // No distinct method
@@ -401,7 +403,7 @@ describe('Executor', () => {
       it('should pass filter and scope to distinct', async () => {
         let capturedField: string;
         let capturedFilter: any;
-        const model: Model = {
+        const model = {
           countDocuments: () => new MyQueryExecutor(100),
           find: () => new MyQueryExecutor(data),
           distinct: (field, filter) => {
@@ -433,7 +435,7 @@ describe('Executor', () => {
       });
 
       it('should return false when no documents exist', async () => {
-        const model: Model = {
+        const model = {
           countDocuments: () => new MyQueryExecutor(0),
           find: () => new MyQueryExecutor([]),
         };
@@ -445,7 +447,7 @@ describe('Executor', () => {
 
       it('should apply scope filter', async () => {
         let capturedFilter: any;
-        const model: Model = {
+        const model = {
           countDocuments: (filter) => {
             capturedFilter = filter;
             return new MyQueryExecutor(1);
@@ -470,7 +472,7 @@ describe('Executor', () => {
       });
 
       it('should return null when no documents match', async () => {
-        const model: Model = {
+        const model = {
           countDocuments: () => new MyQueryExecutor(0),
           find: () => new MyQueryExecutor([]),
         };
@@ -482,7 +484,7 @@ describe('Executor', () => {
 
       it('should apply populate option', async () => {
         const queryExecutor = new TrackingQueryExecutor(data);
-        const model: Model = {
+        const model = {
           countDocuments: () => new MyQueryExecutor(100),
           find: () => queryExecutor,
         };
@@ -499,7 +501,7 @@ describe('Executor', () => {
 
       it('should apply select option', async () => {
         const queryExecutor = new TrackingQueryExecutor(data);
-        const model: Model = {
+        const model = {
           countDocuments: () => new MyQueryExecutor(100),
           find: () => queryExecutor,
         };
@@ -514,7 +516,7 @@ describe('Executor', () => {
 
       it('should limit to 1 document', async () => {
         const queryExecutor = new TrackingQueryExecutor(data);
-        const model: Model = {
+        const model = {
           countDocuments: () => new MyQueryExecutor(100),
           find: () => queryExecutor,
         };
@@ -539,7 +541,7 @@ describe('Executor', () => {
 
       it('should apply scope filter', async () => {
         let capturedFilter: any;
-        const model: Model = {
+        const model = {
           countDocuments: (filter) => {
             capturedFilter = filter;
             return new MyQueryExecutor(50);

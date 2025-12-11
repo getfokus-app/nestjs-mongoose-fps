@@ -13,12 +13,6 @@ export type QueryExecutor<T> = {
   lean(): any;
   populate(relation: string[] | PopulateOptions[]);
   sort(data: SortableParameters): QueryExecutor<T>;
-  select?(fields: string | string[] | Record<string, number>): any;
-};
-
-export type CountQueryExecutor = {
-  exec(): Promise<number>;
-  limit(limit: number): CountQueryExecutor;
 };
 
 export type PopulateOptions = {
@@ -44,15 +38,19 @@ export type AggregateExecutor<T> = {
   exec(): Promise<T>;
 };
 
+/**
+ * Minimal Model interface compatible with Mongoose/Typegoose models.
+ * Only includes the methods that are strictly required for DocumentCollector.
+ * Additional methods like aggregate, distinct are accessed via runtime checks.
+ */
 export type Model = {
-  countDocuments(query: FilterableParameters): CountQueryExecutor;
+  countDocuments(query: FilterableParameters): QueryExecutor<number>;
   find<T>(query: FilterableParameters): QueryExecutor<T[]>;
-  aggregate?<T>(pipeline: Record<string, unknown>[]): AggregateExecutor<T[]>;
-  distinct?(field: string, filter?: FilterableParameters): Promise<unknown[]>;
 };
 
 export class DocumentCollector<T> {
-  constructor(private model: Model) {}
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  constructor(private model: any) {}
 
   scopedFilter(
     userFilter: FilterableParameters,
@@ -196,7 +194,7 @@ export class DocumentCollector<T> {
     if (!this.model.aggregate) {
       throw new Error('Aggregation not supported by this model');
     }
-    return this.model.aggregate<R>(pipeline).exec();
+    return this.model.aggregate(pipeline).exec() as Promise<R[]>;
   }
 
   /**
