@@ -13,7 +13,12 @@ export type QueryExecutor<T> = {
   lean(): any;
   populate(relation: string[] | PopulateOptions[]);
   sort(data: SortableParameters): QueryExecutor<T>;
-  select?(fields: string | string[] | Record<string, number>): QueryExecutor<T>;
+  select?(fields: string | string[] | Record<string, number>): any;
+};
+
+export type CountQueryExecutor = {
+  exec(): Promise<number>;
+  limit(limit: number): CountQueryExecutor;
 };
 
 export type PopulateOptions = {
@@ -40,7 +45,7 @@ export type AggregateExecutor<T> = {
 };
 
 export type Model = {
-  countDocuments(query: FilterableParameters): QueryExecutor<number>;
+  countDocuments(query: FilterableParameters): CountQueryExecutor;
   find<T>(query: FilterableParameters): QueryExecutor<T[]>;
   aggregate?<T>(pipeline: Record<string, unknown>[]): AggregateExecutor<T[]>;
   distinct?(field: string, filter?: FilterableParameters): Promise<unknown[]>;
