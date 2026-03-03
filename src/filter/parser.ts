@@ -17,6 +17,7 @@ const allowedKeys = [
   '$nor',
   '$or',
   '$regex',
+  '$options',
 ];
 
 export class FilterParser {
@@ -53,6 +54,10 @@ export class FilterParser {
             delete v[key];
           }
         }
+      }
+      // Auto-apply case-insensitive flag for $regex when $options is not specified
+      if ('$regex' in v && !('$options' in v)) {
+        v['$options'] = 'i';
       }
       return v;
     }

@@ -57,7 +57,7 @@ describe('Filter', () => {
         });
 
         expect(filterParams).toHaveProperty('name');
-        expect(filterParams.name).toEqual({ $regex: '^image/' });
+        expect(filterParams.name).toEqual({ $regex: '^image/', $options: 'i' });
       });
 
       it('should allow parsing the date field with key $gte', async () => {
