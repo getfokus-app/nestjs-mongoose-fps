@@ -201,6 +201,37 @@ describe('Validator', () => {
       });
     });
 
+    describe('heterogeneous filters', () => {
+      it('should allow plain values next to operator objects', () => {
+        const queries = [
+          { isDescription: false, tags: { $in: ['a', 'b'] } },
+          { origin: 'ai', created_at: { $gte: '2026-01-01' }, done: true },
+        ];
+        queries.forEach((query) => {
+          expect(validator.validate(query)).toBe(true);
+        });
+      });
+
+      it('should allow $or/$and alongside field filters', () => {
+        expect(
+          validator.validate({
+            isDescription: false,
+            $or: [{ title: { $regex: 'x' } }, { content: { $regex: 'x' } }],
+          }),
+        ).toBe(true);
+      });
+
+      it('should allow null inside $in and $nin', () => {
+        expect(validator.validate({ origin: { $in: ['user', null] } })).toBe(
+          true,
+        );
+        expect(validator.validate({ origin: { $nin: ['ai', null] } })).toBe(
+          true,
+        );
+        expect(validator.validate({ mimetype: ['audio', null] })).toBe(true);
+      });
+    });
+
     it('should not be valid', async () => {
       const queries = [
         { $unknown: 'audio' },

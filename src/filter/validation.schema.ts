@@ -7,60 +7,40 @@ export const schema = {
     },
   },
   definitions: {
+    // One object; every field independently takes a plain value, an array,
+    // a comparison, or a logical expression, and $and/$or/$nor may sit
+    // alongside field filters. (Heterogeneous filters — e.g. a plain
+    // equality next to an $in — are the normal case for list UIs.)
     props: {
-      anyOf: [
-        {
-          type: 'object',
-          additionalProperties: false,
-          patternProperties: {
-            '^[a-zA-Z_].*$': {
+      type: 'object',
+      additionalProperties: false,
+      patternProperties: {
+        '^[$](and|or|nor)$': {
+          type: 'array',
+          items: {
+            $ref: '#/definitions/props',
+          },
+        },
+        '^[a-zA-Z_].*$': {
+          anyOf: [
+            {
               type: ['string', 'number', 'boolean', 'null'],
             },
-          },
-        },
-        {
-          type: 'object',
-          additionalProperties: false,
-          patternProperties: {
-            '^[a-zA-Z_].*$': {
+            {
+              type: 'array',
+              items: {
+                type: ['string', 'number', 'boolean', 'null'],
+              },
+            },
+            {
               $ref: '#/definitions/comparison',
             },
-          },
-        },
-        {
-          type: 'object',
-          additionalProperties: false,
-          patternProperties: {
-            '^[a-zA-Z_].*$': {
-              type: 'array',
-              items: {
-                type: ['string', 'number', 'boolean'],
-              },
-            },
-          },
-        },
-        {
-          type: 'object',
-          additionalProperties: false,
-          patternProperties: {
-            '^[a-zA-Z_].*$': {
+            {
               $ref: '#/definitions/logical',
             },
-          },
+          ],
         },
-        {
-          type: 'object',
-          additionalProperties: false,
-          patternProperties: {
-            '[$](and|or|nor)$': {
-              type: 'array',
-              items: {
-                $ref: '#/definitions/props',
-              },
-            },
-          },
-        },
-      ],
+      },
     },
     logical: {
       type: 'object',
@@ -108,7 +88,8 @@ export const schema = {
             },
           },
         },
-        // Array operators: $in, $nin, $all
+        // Array operators: $in, $nin, $all (null allowed — matches
+        // documents where the field is null or missing)
         {
           type: 'object',
           additionalProperties: false,
@@ -116,7 +97,7 @@ export const schema = {
             '^[$](in|nin|all)$': {
               type: 'array',
               items: {
-                type: ['string', 'number', 'boolean'],
+                type: ['string', 'number', 'boolean', 'null'],
               },
             },
           },
@@ -181,13 +162,13 @@ export const schema = {
             $in: {
               type: 'array',
               items: {
-                type: ['string', 'number', 'boolean'],
+                type: ['string', 'number', 'boolean', 'null'],
               },
             },
             $nin: {
               type: 'array',
               items: {
-                type: ['string', 'number', 'boolean'],
+                type: ['string', 'number', 'boolean', 'null'],
               },
             },
             $not: {
