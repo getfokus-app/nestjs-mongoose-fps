@@ -20,6 +20,16 @@ const allowedKeys = [
   '$options',
 ];
 
+/**
+ * The longest `$regex` pattern a filter may carry.
+ *
+ * A pattern arrives from the client and is run against every document in
+ * scope, so its size is the client's to choose unless something says no. This
+ * is far above what a search box or an exact-title lookup sends — the text is
+ * the user's, escaped — and far below the ~32 KB the database itself accepts.
+ */
+export const MAX_REGEX_LENGTH = 1024;
+
 export class FilterParser {
   constructor(private collectionPropsClass: typeof CollectionProperties) {}
 
@@ -54,6 +64,18 @@ export class FilterParser {
             delete v[key];
           }
         }
+      }
+      // Only its length is judged here. Whether the pattern is VALID is the
+      // database's call (it speaks PCRE, which JavaScript's RegExp does not), and
+      // the pattern is never rewritten: the collector turns the database's
+      // refusal into the same validation error.
+      if (
+        typeof v['$regex'] === 'string' &&
+        v['$regex'].length > MAX_REGEX_LENGTH
+      ) {
+        throw new FilterValidationError(
+          `A $regex pattern may be at most ${MAX_REGEX_LENGTH} characters long.`,
+        );
       }
       // Auto-apply case-insensitive flag for $regex when $options is not specified
       if ('$regex' in v && !('$options' in v)) {

@@ -252,6 +252,25 @@ A subset of mongoose query language is supported. The following operators are av
 - `x` - Extended mode (ignore whitespace)
 - `s` - Dotall mode (`.` matches newlines)
 
+**Regex limits:**
+
+A `$regex` comes from the client and runs against every document in scope, so
+three things are refused with the usual `FilterValidationError` (HTTP 400):
+
+- a pattern longer than 1024 characters (`MAX_REGEX_LENGTH`);
+- a pattern the database cannot compile — the pattern itself is never escaped
+  or rewritten, and what is valid is MongoDB's decision (PCRE);
+- a pattern that keeps `find()` or `count()` running longer than
+  `DocumentCollector.regexMaxTimeMS` (5000 ms by default), which is what stops
+  catastrophic backtracking such as `(a+)+$`.
+
+Only filters that carry a `$regex` get the time limit. Change it once at
+start-up, or set it to `0` to turn it off:
+
+```ts
+DocumentCollector.regexMaxTimeMS = 2000;
+```
+
 #### Combined Operators
 
 You can combine multiple operators on the same field:

@@ -5,6 +5,22 @@ import {
   SortableParameters,
 } from '../input.dto';
 import { CollectionResponse, Pagination } from '../output.dto';
+import { FilterValidationError } from '../filter/validation.error';
+
+/** MongoDB's error code for a `$regex` that is not a valid regular expression. */
+const INVALID_REGEX = 51091;
+/** MongoDB's error code for an operation stopped by its `maxTimeMS`. */
+const MAX_TIME_MS_EXPIRED = 50;
+
+/** Whether a filter carries a regular expression anywhere inside it. */
+function holdsRegex(value: unknown): boolean {
+  if (value instanceof RegExp) return true;
+  if (Array.isArray(value)) return value.some(holdsRegex);
+  if (value === null || typeof value !== 'object' || value instanceof Date) {
+    return false;
+  }
+  return '$regex' in value || Object.values(value).some(holdsRegex);
+}
 
 export type QueryExecutor<T> = {
   exec(): Promise<T>;
@@ -49,6 +65,20 @@ export type Model = {
 };
 
 export class DocumentCollector<T> {
+  /**
+   * Time limit, in milliseconds, for a `find()` or `count()` whose filter
+   * carries a `$regex`. `0` turns it off.
+   *
+   * A pattern comes from the client and runs against every document in scope;
+   * one that backtracks catastrophically (`(a+)+$`) keeps a connection busy for
+   * as long as it likes. With the limit the database stops it, and the caller
+   * gets a `FilterValidationError` instead of an answer.
+   *
+   * Filters without a `$regex` are never limited, so nothing else changes.
+   * Set once at start-up if the default does not suit the application.
+   */
+  static regexMaxTimeMS = 5000;
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(private model: any) {}
 
@@ -89,11 +119,44 @@ export class DocumentCollector<T> {
       q.sort(sortOptions);
     }
 
-    const data = (await q.exec()) as T[];
+    const data = await this.run<T[]>(q, query.filter);
     return {
       data,
       pagination: await this.paginate(query, scope),
     };
+  }
+
+  /**
+   * Runs a query built from a client's filter.
+   *
+   * Two things a `$regex` can do are the client's doing and not a server
+   * fault, and both come back as the validation error an invalid filter
+   * already gets: a pattern the database refuses to compile, and one that runs
+   * into the time limit set here. Every other error is handed back untouched.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async run<R>(q: any, filter: FilterableParameters): Promise<R> {
+    const limit = DocumentCollector.regexMaxTimeMS;
+    const limited =
+      limit > 0 && typeof q.maxTimeMS === 'function' && holdsRegex(filter);
+
+    if (limited) q.maxTimeMS(limit);
+
+    try {
+      return (await q.exec()) as R;
+    } catch (error) {
+      if (error?.code === INVALID_REGEX) {
+        throw new FilterValidationError(
+          'Filter query is invalid: a $regex pattern is not a valid regular expression.',
+        );
+      }
+      if (limited && error?.code === MAX_TIME_MS_EXPIRED) {
+        throw new FilterValidationError(
+          'Filter query took too long: simplify the $regex pattern.',
+        );
+      }
+      throw error;
+    }
   }
 
   private async paginate(query: CollectionDto, scope?: FilterableParameters) {
@@ -113,9 +176,12 @@ export class DocumentCollector<T> {
     query: CounterDto,
     scope?: FilterableParameters,
   ): Promise<number> {
-    return this.model
-      .countDocuments(this.scopedFilter(query.filter, scope) ?? query.filter)
-      .exec();
+    return this.run<number>(
+      this.model.countDocuments(
+        this.scopedFilter(query.filter, scope) ?? query.filter,
+      ),
+      query.filter,
+    );
   }
 
   /**

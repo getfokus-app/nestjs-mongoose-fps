@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { CollectionProperties } from '../property';
 import { Expose } from '../property.decorator';
-import { FilterParser } from './parser';
+import { FilterParser, MAX_REGEX_LENGTH } from './parser';
 import { FilterValidationError } from './validation.error';
 
 class User extends CollectionProperties {
@@ -96,6 +96,59 @@ describe('Filter', () => {
 
         expect(filterParams).toHaveProperty('type_name');
       });
+    });
+
+    describe('with a $regex', () => {
+      it('takes a pattern of the longest allowed length', async () => {
+        const pattern = 'a'.repeat(MAX_REGEX_LENGTH);
+
+        const filterParams = new FilterParser(User).parse({
+          filter: { name: { $regex: pattern } },
+        });
+
+        expect(filterParams.name).toEqual({ $regex: pattern, $options: 'i' });
+      });
+
+      it('refuses a longer pattern as an invalid filter', async () => {
+        const parse = () =>
+          new FilterParser(User).parse({
+            filter: { name: { $regex: 'a'.repeat(MAX_REGEX_LENGTH + 1) } },
+          });
+
+        expect(parse).toThrow(FilterValidationError);
+        expect(parse).toThrow(
+          `A $regex pattern may be at most ${MAX_REGEX_LENGTH} characters long.`,
+        );
+      });
+
+      it('refuses a longer pattern wherever it sits in the filter', async () => {
+        const pattern = 'a'.repeat(MAX_REGEX_LENGTH + 1);
+
+        expect(() =>
+          new FilterParser(User).parse({
+            filter: { $or: [{ id: 1 }, { name: { $regex: pattern } }] },
+          }),
+        ).toThrow(FilterValidationError);
+        expect(() =>
+          new FilterParser(User).parse({
+            filter: { name: { $not: { $regex: pattern } } },
+          }),
+        ).toThrow(FilterValidationError);
+      });
+
+      // Whether a pattern is VALID is the database's call, not this parser's:
+      // MongoDB speaks PCRE, and each of these is fine there while JavaScript's
+      // own RegExp refuses it. A pattern must reach the query as it was sent.
+      it.each(['(?i)^john', 'a++b', '(?>a+)b', '(?P<first>jo)hn', '^john$'])(
+        'passes %s through untouched',
+        async (pattern) => {
+          const filterParams = new FilterParser(User).parse({
+            filter: { name: { $regex: pattern, $options: 'm' } },
+          });
+
+          expect(filterParams.name).toEqual({ $regex: pattern, $options: 'm' });
+        },
+      );
     });
 
     describe('with not allowed keys', () => {

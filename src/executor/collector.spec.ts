@@ -4,6 +4,7 @@ import {
   FindOptions,
   PopulateOptions,
 } from './collector';
+import { FilterValidationError } from '../filter/validation.error';
 
 const data = [
   { id: 1, name: 'one' },
@@ -556,6 +557,169 @@ describe('Executor', () => {
         );
 
         expect(capturedFilter).toHaveProperty('$and');
+      });
+    });
+
+    describe('a filter that holds a $regex', () => {
+      /** A model whose queries record the time limit they were given. */
+      const timedModel = (opts: { fail?: unknown; data?: any[] } = {}) => {
+        const limits: Record<'find' | 'countDocuments', number[]> = {
+          find: [],
+          countDocuments: [],
+        };
+        const query = (kind: 'find' | 'countDocuments', result: unknown) => {
+          const executor: any = new MyQueryExecutor(result);
+          executor.maxTimeMS = (ms: number) => {
+            limits[kind].push(ms);
+            return executor;
+          };
+          if (opts.fail) {
+            executor.exec = () => Promise.reject(opts.fail);
+          }
+          return executor;
+        };
+
+        return {
+          limits,
+          model: {
+            find: () => query('find', opts.data ?? data),
+            countDocuments: () => query('countDocuments', 100),
+          },
+        };
+      };
+      const page = { page: 1, limit: 10 };
+      /** What the MongoDB server answers, as the driver hands it on. */
+      const serverError = (code: number, message: string) =>
+        Object.assign(new Error(message), { name: 'MongoServerError', code });
+
+      afterEach(() => {
+        DocumentCollector.regexMaxTimeMS = 5000;
+      });
+
+      it('gives the find and its count a time limit', async () => {
+        const { model, limits } = timedModel();
+
+        await new DocumentCollector(model).find({
+          ...page,
+          filter: { name: { $regex: '^one', $options: 'i' } },
+        });
+
+        expect(limits).toEqual({ find: [5000], countDocuments: [5000] });
+      });
+
+      it('gives a count on its own the same limit', async () => {
+        const { model, limits } = timedModel();
+
+        await new DocumentCollector(model).count({
+          filter: { name: { $regex: '^one' } },
+        });
+
+        expect(limits.countDocuments).toEqual([5000]);
+      });
+
+      it.each([
+        ['inside $or', { $or: [{ id: 1 }, { name: { $regex: 'one' } }] }],
+        ['under $not', { name: { $not: { $regex: 'one' } } }],
+        [
+          'deep inside $and',
+          { $and: [{ id: 1 }, { $or: [{ name: { $regex: 'one' } }] }] },
+        ],
+      ])('finds the $regex %s', async (_where, filter) => {
+        const { model, limits } = timedModel();
+
+        await new DocumentCollector(model).find({ ...page, filter });
+
+        expect(limits.find).toEqual([5000]);
+      });
+
+      it('leaves a filter without a $regex unlimited', async () => {
+        const { model, limits } = timedModel();
+
+        await new DocumentCollector(model).find(
+          { ...page, filter: { name: 'one', id: { $in: [1, 2] } } },
+          { workspace: 'ws-123' },
+        );
+        await new DocumentCollector(model).find({ ...page, filter: {} });
+
+        expect(limits).toEqual({ find: [], countDocuments: [] });
+      });
+
+      it('uses the limit the application set, and none when it set 0', async () => {
+        const { model, limits } = timedModel();
+        const filter = { name: { $regex: 'one' } };
+
+        DocumentCollector.regexMaxTimeMS = 250;
+        await new DocumentCollector(model).find({ ...page, filter });
+        expect(limits.find).toEqual([250]);
+
+        DocumentCollector.regexMaxTimeMS = 0;
+        await new DocumentCollector(model).find({ ...page, filter });
+        expect(limits.find).toEqual([250]);
+      });
+
+      it('works with a query that cannot be given a time limit', async () => {
+        const collector = new DocumentCollector(new MyModel());
+
+        const result = await collector.find({
+          ...page,
+          filter: { name: { $regex: 'one' } },
+        });
+
+        expect(result.data).toEqual(data);
+      });
+
+      it('answers an invalid filter when the database refuses the pattern', async () => {
+        const { model } = timedModel({
+          fail: serverError(
+            51091,
+            'Regular expression is invalid: missing closing parenthesis',
+          ),
+        });
+        const find = new DocumentCollector(model).find({
+          ...page,
+          filter: { name: { $regex: '(' } },
+        });
+
+        await expect(find).rejects.toThrow(FilterValidationError);
+        await expect(find).rejects.toThrow(
+          'Filter query is invalid: a $regex pattern is not a valid regular expression.',
+        );
+      });
+
+      it('answers an invalid filter when the pattern runs into the time limit', async () => {
+        const { model } = timedModel({
+          fail: serverError(50, 'operation exceeded time limit'),
+        });
+        const count = new DocumentCollector(model).count({
+          filter: { name: { $regex: '(a+)+$' } },
+        });
+
+        await expect(count).rejects.toThrow(FilterValidationError);
+        await expect(count).rejects.toThrow(
+          'Filter query took too long: simplify the $regex pattern.',
+        );
+      });
+
+      it('hands a time limit it did not set back as it came', async () => {
+        const failure = serverError(50, 'operation exceeded time limit');
+        const { model } = timedModel({ fail: failure });
+
+        // No $regex: whatever limit tripped belongs to the application.
+        await expect(
+          new DocumentCollector(model).find({ ...page, filter: { id: 1 } }),
+        ).rejects.toBe(failure);
+      });
+
+      it('hands every other database error back as it came', async () => {
+        const failure = serverError(11600, 'interrupted at shutdown');
+        const { model } = timedModel({ fail: failure });
+
+        await expect(
+          new DocumentCollector(model).find({
+            ...page,
+            filter: { name: { $regex: 'one' } },
+          }),
+        ).rejects.toBe(failure);
       });
     });
 
