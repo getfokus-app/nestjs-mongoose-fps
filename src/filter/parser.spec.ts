@@ -151,6 +151,77 @@ describe('Filter', () => {
       );
     });
 
+    describe('with the array and element operators', () => {
+      it.each([
+        ['$exists', { $exists: true }],
+        ['$exists', { $exists: false }],
+        ['$all', { $all: ['a', 'b'] }],
+        ['$size', { $size: 3 }],
+        ['$type', { $type: 'string' }],
+        ['$type', { $type: 2 }],
+        ['$elemMatch', { $elemMatch: { name: 'image' } }],
+      ])('accepts %s', (_op, value) => {
+        expect(
+          new FilterParser(User).parse({ filter: { name: value } }),
+        ).toEqual({
+          name: value,
+        });
+      });
+
+      it.each([
+        ['$exists', { $exists: 'yes' }],
+        ['$all', { $all: 'a' }],
+        ['$size', { $size: -1 }],
+        ['$size', { $size: 'three' }],
+        ['$type', { $type: true }],
+        ['$elemMatch', { $elemMatch: 'x' }],
+      ])('refuses a bad value for %s', (_op, value) => {
+        expect(() =>
+          new FilterParser(User).parse({ filter: { name: value } }),
+        ).toThrow();
+      });
+
+      it.each(['$where', '$function', '$expr', '$accumulator'])(
+        'refuses %s nested directly in $elemMatch',
+        (op) => {
+          expect(() =>
+            new FilterParser(User).parse({
+              filter: { name: { $elemMatch: { [op]: 'this.a == 1' } } },
+            }),
+          ).toThrow(FilterValidationError);
+        },
+      );
+
+      it('refuses a disallowed operator deep inside $elemMatch', () => {
+        expect(() =>
+          new FilterParser(User).parse({
+            filter: {
+              name: {
+                $elemMatch: {
+                  $or: [{ id: { $elemMatch: { $where: 'sleep(1000)' } } }],
+                },
+              },
+            },
+          }),
+        ).toThrow(FilterValidationError);
+        expect(() =>
+          new FilterParser(User).parse({
+            filter: {
+              name: { $elemMatch: { name: { $expr: { $eq: [1, 1] } } } },
+            },
+          }),
+        ).toThrow(FilterValidationError);
+      });
+
+      it('refuses a property that is not exposed inside $elemMatch', () => {
+        expect(() =>
+          new FilterParser(User).parse({
+            filter: { name: { $elemMatch: { nonexistent: 'x' } } },
+          }),
+        ).toThrow(FilterValidationError);
+      });
+    });
+
     describe('with not allowed keys', () => {
       it('should throw error', async () => {
         expect(() =>
