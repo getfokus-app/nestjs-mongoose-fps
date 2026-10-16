@@ -1,6 +1,6 @@
 import { plainToClass } from 'class-transformer';
 import { validate } from 'class-validator';
-import { CollectionDto, CounterDto } from './input.dto';
+import { CollectionDto, CounterDto, MAX_LIMIT } from './input.dto';
 
 describe('CounterDto', () => {
   it('should transform filter attribute into object', async () => {
@@ -95,6 +95,28 @@ describe('CollectionDto', () => {
       const collectionDto = plainToClass(CollectionDto, payload);
       const errors = await validate(collectionDto);
       expect(errors.length).not.toBe(0);
+    });
+
+    it('should allow the maximum', async () => {
+      const dto = plainToClass(CollectionDto, { limit: MAX_LIMIT });
+      expect((await validate(dto)).length).toBe(0);
+    });
+
+    it('should allow a number just below the maximum', async () => {
+      const dto = plainToClass(CollectionDto, { limit: MAX_LIMIT - 1 });
+      expect((await validate(dto)).length).toBe(0);
+    });
+
+    it('should not allow a number above the maximum', async () => {
+      const dto = plainToClass(CollectionDto, { limit: MAX_LIMIT + 1 });
+      const errors = await validate(dto);
+      expect(errors.length).toBe(1);
+      expect(errors[0].property).toBe('limit');
+    });
+
+    it('should not allow a query-string limit above the maximum', async () => {
+      const dto = plainToClass(CollectionDto, { limit: String(MAX_LIMIT + 1) });
+      expect((await validate(dto)).length).not.toBe(0);
     });
 
     it('should default to 10 if not given', async () => {

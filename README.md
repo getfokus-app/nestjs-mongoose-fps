@@ -198,6 +198,10 @@ You need to run the parameters through `urlencode` to be able to parse the query
 You can specify more than one field for sorting by providing a list of them separated by a semicolon: `createdAt;userName`.
 To use DESC sort order: `-createdAt`.
 
+### Pagination
+
+`page` starts at 1 and defaults to 1. `limit` is the page size: 1 to 1000, default 10. A `limit` above 1000 (or below 1) is refused with a validation error (HTTP 400) rather than clamped.
+
 ### Filter
 
 A subset of mongoose query language is supported. The following operators are available:
@@ -222,6 +226,8 @@ A subset of mongoose query language is supported. The following operators are av
 | `$all` | Match all values in array | `{ "tags": { "$all": ["urgent", "important"] } }` |
 | `$size` | Match array with exact size | `{ "items": { "$size": 5 } }` |
 | `$elemMatch` | Match array element with conditions | `{ "items": { "$elemMatch": { "qty": { "$gt": 10 } } } }` |
+
+`$elemMatch` takes a nested filter that goes through the same checks as the top level: only the operators in this list and only properties exposed for filtering are accepted, so `$where`, `$function` or `$expr` are refused at any depth.
 
 #### Logical Operators
 

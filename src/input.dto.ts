@@ -1,9 +1,12 @@
 import { Transform, TransformFnParams, Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsObject, IsOptional, IsString, Min } from 'class-validator';
+import { IsObject, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export type SortableParameters = Record<string, 'desc' | 'asc'>;
 export type FilterableParameters = Record<string, unknown>;
+
+/** The largest page a client may ask for; the biggest caller in the apps asks for 1000. */
+export const MAX_LIMIT = 1000;
 
 export class CounterDto {
   @ApiPropertyOptional({
@@ -44,7 +47,13 @@ export class CollectionDto {
 
   @Type(() => Number)
   @Min(1)
-  @ApiPropertyOptional({ example: 10, description: '' })
+  @Max(MAX_LIMIT)
+  @ApiPropertyOptional({
+    example: 10,
+    description: `Page size, 1 to ${MAX_LIMIT}`,
+    minimum: 1,
+    maximum: MAX_LIMIT,
+  })
   readonly limit?: number = 10;
 }
 

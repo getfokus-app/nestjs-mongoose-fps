@@ -18,6 +18,11 @@ const allowedKeys = [
   '$or',
   '$regex',
   '$options',
+  '$exists',
+  '$all',
+  '$size',
+  '$elemMatch',
+  '$type',
 ];
 
 /**
