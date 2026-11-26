@@ -57,6 +57,15 @@ export class CollectionDto {
   readonly limit?: number = 10;
 }
 
-function filterQueryToObject(v: string): Record<string, unknown> {
-  return JSON.parse(v);
+/**
+ * A filter that is not JSON is handed back as the raw string so `@IsObject()`
+ * rejects it as a validation error (400), instead of the SyntaxError escaping
+ * the transform as a 500.
+ */
+function filterQueryToObject(v: string): Record<string, unknown> | string {
+  try {
+    return JSON.parse(v);
+  } catch {
+    return v;
+  }
 }

@@ -128,3 +128,18 @@ describe('CollectionDto', () => {
     });
   });
 });
+
+describe('a filter that is not JSON', () => {
+  // Such a filter used to throw a SyntaxError out of the transform, which the
+  // app answered as a 500. It is the client's mistake, so it must be a 400.
+  it.each(['sleep(20)#-- -', '1 or sleep(5)#', "'"])(
+    'fails validation for %p instead of throwing',
+    async (filter) => {
+      for (const Dto of [CollectionDto, CounterDto]) {
+        const dto = plainToClass(Dto, { filter });
+        const errors = await validate(dto);
+        expect(errors.map((e) => e.property)).toContain('filter');
+      }
+    },
+  );
+});
